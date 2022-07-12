@@ -10,130 +10,216 @@ from user import User
 from match import UserMatch, Match
 from database import dbInit
 from secret import api_key
+  
+class AutoScript:
+    def __init__(self,path):
+        self.db = dbInit()
+        self.api_key = api_key()
+        if ".json" in path:
+            self.data = self.getJson(path)
+        self.allUser = self.getAllUser()
+        self.userDict = self.makeUser()
+        self.userPuuidList = list(self.userDict.keys())
+        self.match = Match(self.userPuuidList,self.data['teams'][0]['win'] == 'Win',
+            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000))
+        self.userMatch = self.makeMatchList()
 
-changedName = {
-    "감염된게음성인가":"깨물기 없다 앙",
-    "옥산동 제어와드": "오산동 제어와드",
-    "림0I": "LuLu랄라",
-}
+    def getJson(self,path):
+        with open(path,"r") as st_json:
+            data = json.load(st_json)
+        return data
 
-def getJson(path):
-    with open(path,"r") as st_json:
-        data = json.load(st_json)
-    return data
+    def makeUser(self):
+        userDict = {}
+        changedName = {
+            "감염된게음성인가":"깨물기 없다 앙",
+            "옥산동 제어와드": "오산동 제어와드",
+            "림0I": "LuLu랄라",
+        }
+        for i in range(10):
+            summoner = self.data['participantIdentities'][i]['player']
+            name = summoner['summonerName']
+            if name in changedName.keys():
+                name = changedName[name]
+            user_data = encrypt(self.api_key,name)
+            puuid = user_data['puuid']
 
-def makeMatchList(users,data):
-    userMatchList = {}
-    for i in range(10):
-        stat = data['participants'][i]
-        userMatchList[users[i]]=(UserMatch(stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
-        stat['stats']['kills'],stat['stats']['deaths'],stat['stats']['assists'],
-        stat['stats']['totalMinionsKilled']+stat['stats']['neutralMinionsKilled'],
-        0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item2'],
-        stat['stats']['item4'],stat['stats']['item5'],stat['stats']['item6']],stat['stats']['visionWardsBoughtInGame'],
-        datetime.datetime.fromtimestamp(data['gameCreation']/1000)))
+            if puuid in self.allUser.keys():
+                user = self.allUser[puuid]
+            else:
+                user = User(user_data['name'],user_data['profileIconId'],1300,0,0)
+            userDict[puuid] = user
+        self.allUser.update(userDict)
+        return userDict
 
-    return userMatchList
-    
-def getAllUser():
-    allUser = {}
-    docr_ref = db.collection(u'users').stream()
-    for doc in docr_ref:
-        allUser[doc.id] = User.from_dict(doc.to_dict())
-    return allUser
+    def getAllUser(self):
+        allUser = {}
+        docr_ref = self.db.collection(u'users').stream()
+        for doc in docr_ref:
+            allUser[doc.id] = User.from_dict(doc.to_dict())
+        return allUser
 
-def makeUser(data,api_key,users):
-    userDict = {}
-    for i in range(10):
-        summoner = data['participantIdentities'][i]['player']
-        name = summoner['summonerName']
-        if name in changedName.keys():
-            name = changedName[name]
-        user_data = encrypt(api_key,name)
-        print(summoner['summonerName'])
-        puuid = user_data['puuid']
+    def makeMatchList(self):
+        userMatchList = {}
+        for i in range(10):
+            stat = self.data['participants'][i]
+            userMatchList[self.userPuuidList[i]]=(UserMatch(stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
+            stat['stats']['kills'],stat['stats']['deaths'],stat['stats']['assists'],
+            stat['stats']['totalMinionsKilled']+stat['stats']['neutralMinionsKilled'],
+            0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item2'],
+            stat['stats']['item4'],stat['stats']['item5'],stat['stats']['item6']],stat['stats']['visionWardsBoughtInGame'],
+            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000)))
 
-        if puuid in users.keys():
-            user = users[puuid]
-        else:
-            user = User(user_data['name'],user_data['profileIconId'],1300,0,0)
-        userDict[puuid] = user
+        return userMatchList
 
-    return userDict
-        
+    def updateElo(self):
+        all_elo = [v.elo for _,v in self.allUser.items()]
+        avg_elo, std_elo = np.mean(all_elo), np.std(all_elo)
 
-db = dbInit()
-data = getJson("../end/4783411518.json")
-allUser = getAllUser()
-userDict = makeUser(data,api_key(),allUser)
-allUser.update(userDict)
+        supportList = [i[0] for i in sorted([[k,v.cs] for k,v in self.userMatch.items()],key=lambda x:x[1])[:2]]
+        eloList = [v.elo for k,v in self.userDict.items()]
 
-userPuuidList = list(userDict.keys())
-match = Match(userPuuidList,data['teams'][0]['win'] == 'Win',datetime.datetime.fromtimestamp(data['gameCreation']/1000))
+        score = []
+        for k,v in self.userMatch.items():
+            if k in supportList:
+                score.append(v.score(True))
+            else:
+                score.append(v.score())
 
-userMatch = makeMatchList(userPuuidList,data)
+        responsibilityFactor = 10 #낮아질수록 상위 플레이어의 책임이 커짐
+        outperformThreshold = 40 #캐리 점수, 져도 점수를 거의 잃지 않으며 이를 넘길경우 소량 증가함
 
-all_elo = [v.elo for _,v in allUser.items()]
-avg_elo, std_elo = np.mean(all_elo), np.std(all_elo)
+        weightedPercentile = [pow(scipy.stats.norm(avg_elo, std_elo).cdf(elo), 1/responsibilityFactor) for elo in eloList]
+        weightedPercentile = list(map(lambda x:0.5 if np.isnan(x) else x, weightedPercentile))
+        t1Score, t2Score = sum(score[:5]),sum(score[5:])
+        t1Elo, t2Elo = sum(eloList[:5]),sum(eloList[5:])
 
-supportList = [i[0] for i in sorted([[k,v.cs] for k,v in userMatch.items()],key=lambda x:x[1])[:2]]
-eloList = [v.elo for k,v in userDict.items()]
+        t1TotalWeightedPercentile, t2TotalWeightedPercentile = sum(weightedPercentile[:5]), sum(weightedPercentile[5:])
 
-score = []
-for k,v in userMatch.items():
-    if k in supportList:
-        score.append(v.score(True))
-    else:
-        score.append(v.score())
+        deltaCombatScore = []
+        for i in range(5):
+            expectedScore = t1Score*weightedPercentile[i]/t1TotalWeightedPercentile
+            deltaCombatScore.append(score[i] - expectedScore)
 
-responsibilityFactor = 10 #낮아질수록 상위 플레이어의 책임이 커짐
-outperformThreshold = 40 #캐리 점수, 져도 점수를 거의 잃지 않으며 이를 넘길경우 소량 증가함
+        for i in range(5,10):
+            expectedScore = t2Score*weightedPercentile[i]/t2TotalWeightedPercentile
+            deltaCombatScore.append(score[i] - expectedScore)
+
+        elo_change_sum = Match.determineK(t1Score,t2Score)
+        ea = 1.0 / (1.0 + pow(10.0, (t2Elo - t1Elo) / 400.0))
+
+        s = 1 if self.data['teams'][0]['win'] == 'Win' else 0
+        teamOneEloChange = round(elo_change_sum * (s - ea))
+        teamTwoEloChange = -teamOneEloChange
+
+        for i in range(5):
+            if teamOneEloChange >= 0:
+                eloList[i] += int((teamOneEloChange / 5) * (1 + deltaCombatScore[i] / outperformThreshold)+0.5)
+            else:
+                eloList[i] += int((teamOneEloChange / 5) * (1 - deltaCombatScore[i] / outperformThreshold)+0.5)
+
+        for i in range(5,10):
+            if teamTwoEloChange >= 0:
+                eloList[i] += int((teamTwoEloChange / 5) * (1 + deltaCombatScore[i] / outperformThreshold)+0.5)
+            else:
+                eloList[i] += int((teamTwoEloChange / 5) * (1 - deltaCombatScore[i] / outperformThreshold)+0.5)
+
+        eloChange = [eloList[i] - self.userDict[self.userPuuidList[i]].elo for i in range(10)]
+
+        for i in range(10):
+            self.userDict[self.userPuuidList[i]].elo = eloList[i]
+            self.userMatch[self.userPuuidList[i]].eloChange = eloChange[i]
+
+    def printCurrent(self):
+        for v in self.userDict.values():
+            print(v)
+        print()
+        print(self.match)
+        print()
+        for v in self.userMatch.values():
+            print(v)
+
+autoScript = AutoScript("../end/4783411518.json")
+autoScript.printCurrent()
+autoScript.updateElo()
+autoScript.printCurrent()
 
 
-print(avg_elo, std_elo)
-weightedPercentile = [pow(scipy.stats.norm(avg_elo, std_elo).cdf(elo), 1/responsibilityFactor) for elo in eloList]
-weightedPercentile = list(map(lambda x:0.5 if np.isnan(x) else x, weightedPercentile))
-t1Score, t2Score = sum(score[:5]),sum(score[5:])
-t1Elo, t2Elo = sum(eloList[:5]),sum(eloList[5:])
+# db = dbInit()
+# data = getJson("../end/4783411518.json")
 
-t1TotalWeightedPercentile, t2TotalWeightedPercentile = sum(weightedPercentile[:5]), sum(weightedPercentile[5:])
+# allUser = getAllUser()
+# userDict = makeUser(data,api_key(),allUser)
+# allUser.update(userDict)
 
-deltaCombatScore = []
-for i in range(5):
-    expectedScore = t1Score*weightedPercentile[i]/t1TotalWeightedPercentile
-    deltaCombatScore.append(score[i] - expectedScore)
+# autoScript = AutoScript()
 
-for i in range(5,10):
-    expectedScore = t2Score*weightedPercentile[i]/t2TotalWeightedPercentile
-    deltaCombatScore.append(score[i] - expectedScore)
+# userPuuidList = list(userDict.keys())
+# match = Match(userPuuidList,data['teams'][0]['win'] == 'Win',datetime.datetime.fromtimestamp(data['gameCreation']/1000))
 
-elo_change_sum = Match.determineK(t1Score,t2Score)
-ea = 1.0 / (1.0 + pow(10.0, (t2Elo - t1Elo) / 400.0))
+# userMatch = makeMatchList(userPuuidList,data)
 
-s = 1 if data['teams'][0]['win'] == 'Win' else 0
-teamOneEloChange = round(elo_change_sum * (s - ea))
-teamTwoEloChange = -teamOneEloChange
+# all_elo = [v.elo for _,v in allUser.items()]
+# avg_elo, std_elo = np.mean(all_elo), np.std(all_elo)
+
+# supportList = [i[0] for i in sorted([[k,v.cs] for k,v in userMatch.items()],key=lambda x:x[1])[:2]]
+# eloList = [v.elo for k,v in userDict.items()]
+
+# score = []
+# for k,v in userMatch.items():
+#     if k in supportList:
+#         score.append(v.score(True))
+#     else:
+#         score.append(v.score())
+
+# responsibilityFactor = 10 #낮아질수록 상위 플레이어의 책임이 커짐
+# outperformThreshold = 40 #캐리 점수, 져도 점수를 거의 잃지 않으며 이를 넘길경우 소량 증가함
+
+
+# print(avg_elo, std_elo)
+# weightedPercentile = [pow(scipy.stats.norm(avg_elo, std_elo).cdf(elo), 1/responsibilityFactor) for elo in eloList]
+# weightedPercentile = list(map(lambda x:0.5 if np.isnan(x) else x, weightedPercentile))
+# t1Score, t2Score = sum(score[:5]),sum(score[5:])
+# t1Elo, t2Elo = sum(eloList[:5]),sum(eloList[5:])
+
+# t1TotalWeightedPercentile, t2TotalWeightedPercentile = sum(weightedPercentile[:5]), sum(weightedPercentile[5:])
+
+# deltaCombatScore = []
+# for i in range(5):
+#     expectedScore = t1Score*weightedPercentile[i]/t1TotalWeightedPercentile
+#     deltaCombatScore.append(score[i] - expectedScore)
+
+# for i in range(5,10):
+#     expectedScore = t2Score*weightedPercentile[i]/t2TotalWeightedPercentile
+#     deltaCombatScore.append(score[i] - expectedScore)
+
+# elo_change_sum = Match.determineK(t1Score,t2Score)
+# ea = 1.0 / (1.0 + pow(10.0, (t2Elo - t1Elo) / 400.0))
+
+# s = 1 if data['teams'][0]['win'] == 'Win' else 0
+# teamOneEloChange = round(elo_change_sum * (s - ea))
+# teamTwoEloChange = -teamOneEloChange
 
 # for i in range(10):
 #     print(userDict[userPuuidList[i]].name,score[i],eloList[i])
 
-for i in range(5):
-    if teamOneEloChange >= 0:
-        eloList[i] += int((teamOneEloChange / 5) * (1 + deltaCombatScore[i] / outperformThreshold)+0.5)
-    else:
-        eloList[i] += int((teamOneEloChange / 5) * (1 - deltaCombatScore[i] / outperformThreshold)+0.5)
+# for i in range(5):
+#     if teamOneEloChange >= 0:
+#         eloList[i] += int((teamOneEloChange / 5) * (1 + deltaCombatScore[i] / outperformThreshold)+0.5)
+#     else:
+#         eloList[i] += int((teamOneEloChange / 5) * (1 - deltaCombatScore[i] / outperformThreshold)+0.5)
 
-for i in range(5,10):
-    if teamTwoEloChange >= 0:
-        eloList[i] += int((teamTwoEloChange / 5) * (1 + deltaCombatScore[i] / outperformThreshold)+0.5)
-    else:
-        eloList[i] += int((teamTwoEloChange / 5) * (1 - deltaCombatScore[i] / outperformThreshold)+0.5)
+# for i in range(5,10):
+#     if teamTwoEloChange >= 0:
+#         eloList[i] += int((teamTwoEloChange / 5) * (1 + deltaCombatScore[i] / outperformThreshold)+0.5)
+#     else:
+#         eloList[i] += int((teamTwoEloChange / 5) * (1 - deltaCombatScore[i] / outperformThreshold)+0.5)
 
-eloChange = [eloList[i] - userDict[userPuuidList[i]].elo for i in range(10)]
+# eloChange = [eloList[i] - userDict[userPuuidList[i]].elo for i in range(10)]
 
-for i in range(10):
-    userDict[userPuuidList[i]].elo = eloList[i]
-    userMatch[userPuuidList[i]].eloChange = eloChange[i]
+# for i in range(10):
+#     userDict[userPuuidList[i]].elo = eloList[i]
+#     userMatch[userPuuidList[i]].eloChange = eloChange[i]
 
 # for k,v in userDict.items():
 #     print(v)
