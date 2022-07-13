@@ -9,7 +9,8 @@ from encryptId import encrypt
 from user import User
 from match import UserMatch, Match
 from database import dbInit
-from secret import api_key
+from secret import api_key, get_changed_name
+from parse_rofl import parse_rofl
   
 class AutoScript:
     def __init__(self,path):
@@ -17,11 +18,13 @@ class AutoScript:
         self.api_key = api_key()
         if ".json" in path:
             self.data = self.getJson(path)
+        elif ".rofl" in path:
+            self.data = parse_rofl(path)
         self.allUser = self.getAllUser()
         self.userDict = self.makeUser()
         self.userPuuidList = list(self.userDict.keys())
         self.match = Match(self.userPuuidList,self.data['teams'][0]['win'] == 'Win',
-            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000))
+            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),self.data['gameDuration'])
         self.userMatch = self.makeMatchList()
 
     def getJson(self,path):
@@ -31,16 +34,13 @@ class AutoScript:
 
     def makeUser(self):
         userDict = {}
-        changedName = {
-            "감염된게음성인가":"깨물기 없다 앙",
-            "옥산동 제어와드": "오산동 제어와드",
-            "림0I": "LuLu랄라",
-        }
+        changedName = get_changed_name()
         for i in range(10):
             summoner = self.data['participantIdentities'][i]['player']
             name = summoner['summonerName']
             if name in changedName.keys():
                 name = changedName[name]
+            print(name)
             user_data = encrypt(self.api_key,name)
             puuid = user_data['puuid']
 

@@ -1,8 +1,9 @@
 class Match(object):
-    def __init__(self,users,win,matchDate):
+    def __init__(self,users,win,matchDate,gameDuration):
         self.users = users
         self.win = win
         self.matchDate = matchDate
+        self.gameDuration = gameDuration
     
     @staticmethod
     def from_dict(source):
@@ -15,6 +16,7 @@ class Match(object):
             u'users': self.users,
             u'win': self.win,
             u'matchDate': self.matchDate,
+            u'gameDuration': self.gameDuration
         }
         return match
     
@@ -24,6 +26,7 @@ class Match(object):
                 users={self.users}, \
                 win={self.win}, \
                 matchDate={self.matchDate}, \
+                gameDuration={self.gameDuration}, \
             )'
         )
     
