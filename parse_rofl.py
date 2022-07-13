@@ -62,14 +62,4 @@ def parse_rofl(path):
         new_data['participants'].append(tmp_dict)
         new_data['participantIdentities'].append({'player':{'summonerName':v['NAME']}})
 
-    return new_data#json.dumps(new_data)
-
-if __name__ == '__main__':
-    path = '../end'
-    for p in os.listdir(path):
-        if ".rofl" in p:
-            data = parse_rofl("../end/" + p)
-    # path = 'KR-5457721894.rofl'
-    # data = parse_rofl(path)
-    # with open('./testrofl4.json','w') as f:
-    #     f.write(data)
+    return new_data
