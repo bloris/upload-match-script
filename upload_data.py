@@ -8,24 +8,41 @@ import scipy.stats
 from encryptId import encrypt
 from user import User
 from match import UserMatch, Match
-from database import dbInit
+from database import firebaseDB
 from secret import api_key, get_changed_name
 from parse_rofl import parse_rofl
   
 class AutoScript:
-    def __init__(self,path):
-        self.db = dbInit()
+    def __init__(self):
+        self.db = firebaseDB()
         self.api_key = api_key()
+
+    def getData(self,path):
         if ".json" in path:
             self.data = self.getJson(path)
         elif ".rofl" in path:
             self.data = parse_rofl(path)
-        self.allUser = self.getAllUser()
+
+        self.data['gameId'] = str(self.data["gameId"])
+
+        if self.db.isMatchExist(self.data['gameId']):
+            print("Match Already Exist")
+            return False
+        self.allUser = self.db.getAllUser()
         self.userDict = self.makeUser()
         self.userPuuidList = list(self.userDict.keys())
-        self.match = Match(self.userPuuidList,self.data['teams'][0]['win'] == 'Win',
-            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),self.data['gameDuration'])
+        self.match = [self.data['gameId'], Match(self.userPuuidList,self.data['teams'][0]['win'] == 'Win',
+            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),self.data['gameDuration'])]
         self.userMatch = self.makeMatchList()
+
+        return True
+
+    def putData(self):
+        response = self.db.putData(self.userDict,self.match,self.userMatch)
+        # if response:
+        #     print("Success")
+        # else:
+        #     print("Fail")
 
     def getJson(self,path):
         with open(path,"r") as st_json:
@@ -40,7 +57,7 @@ class AutoScript:
             name = summoner['summonerName']
             if name in changedName.keys():
                 name = changedName[name]
-            print(name)
+            #print(name)
             user_data = encrypt(self.api_key,name)
             puuid = user_data['puuid']
 
@@ -52,23 +69,16 @@ class AutoScript:
         self.allUser.update(userDict)
         return userDict
 
-    def getAllUser(self):
-        allUser = {}
-        docr_ref = self.db.collection(u'users').stream()
-        for doc in docr_ref:
-            allUser[doc.id] = User.from_dict(doc.to_dict())
-        return allUser
-
     def makeMatchList(self):
         userMatchList = {}
         for i in range(10):
             stat = self.data['participants'][i]
-            userMatchList[self.userPuuidList[i]]=(UserMatch(stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
+            userMatchList[self.userPuuidList[i]]=UserMatch(stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
             stat['stats']['kills'],stat['stats']['deaths'],stat['stats']['assists'],
             stat['stats']['totalMinionsKilled']+stat['stats']['neutralMinionsKilled'],
             0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item2'],
             stat['stats']['item4'],stat['stats']['item5'],stat['stats']['item6']],stat['stats']['visionWardsBoughtInGame'],
-            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000)))
+            datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),False)
 
         return userMatchList
 
@@ -93,6 +103,8 @@ class AutoScript:
         weightedPercentile = list(map(lambda x:0.5 if np.isnan(x) else x, weightedPercentile))
         t1Score, t2Score = sum(score[:5]),sum(score[5:])
         t1Elo, t2Elo = sum(eloList[:5]),sum(eloList[5:])
+        killList = [v.kill for v in self.userMatch.values()]
+        t1Kill, t2Kill = sum(killList[:5]), sum(killList[5:])
 
         t1TotalWeightedPercentile, t2TotalWeightedPercentile = sum(weightedPercentile[:5]), sum(weightedPercentile[5:])
 
@@ -127,19 +139,24 @@ class AutoScript:
         eloChange = [eloList[i] - self.userDict[self.userPuuidList[i]].elo for i in range(10)]
 
         for i in range(10):
-            self.userDict[self.userPuuidList[i]].elo = eloList[i]
-            self.userMatch[self.userPuuidList[i]].eloChange = eloChange[i]
+            puuid = self.userPuuidList[i]
+            killTotal = t1Kill if i < 5 else t2Kill
+            win = True if i < 5 and s == 1 else False
+            self.userDict[puuid].elo = eloList[i]
+            self.userMatch[puuid].eloChange = eloChange[i]
+            self.userMatch[puuid].killP = int(100 * (self.userMatch[puuid].kill+self.userMatch[puuid].assist) / killTotal + 0.5)
+            self.userMatch[puuid].win = win
+            if win:
+                self.userDict[puuid].win += 1
+            else:
+                self.userDict[puuid].lose += 1
 
     def printCurrent(self):
         for v in self.userDict.values():
             print(v)
         print()
-        print(self.match)
+        print(self.match[1])
         print()
         for v in self.userMatch.values():
             print(v)
 
-autoScript = AutoScript("../end/4783411518.json")
-autoScript.printCurrent()
-autoScript.updateElo()
-autoScript.printCurrent()

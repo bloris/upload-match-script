@@ -14,3 +14,13 @@ def get_changed_name():
     with open("secret.json") as f:
         json_p = json.loads(f.read())
     return json_p["changed_name"]
+
+def getDBKey():
+    with open("secret.json") as f:
+        json_p = json.loads(f.read())
+    return json_p["dbKey"]
+
+def getPath():
+    with open("secret.json") as f:
+        json_p = json.loads(f.read())
+    return json_p["history_path"]

@@ -45,7 +45,7 @@ class Match(object):
             
         return defaultK
 class UserMatch(object):
-    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,matchDate) -> None:
+    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,matchDate,win) -> None:
         self.champ = champ
         self.eloChange = eloChange
         self.mainPerk = mainPerk
@@ -58,6 +58,7 @@ class UserMatch(object):
         self.item = item
         self.ward = ward
         self.matchDate = matchDate
+        self.win = win
     
     def score(self,support = False):
         return self.kill * 2 - self.death + self.assist + (0.08*self.cs) + (self.assist if support else 0)
@@ -65,8 +66,8 @@ class UserMatch(object):
     @staticmethod
     def from_dict(source):
         # [START_EXCLUDE]
-        userMatch = UserMatch(source[u'champ'], source[u'eloChange'], source[u'mainPerk'], source[u'subPerk'], 
-        source[u'kill'], source[u'death'], source[u'assist'], source[u'cs'], source[u'killP'], source[u'item'], source[u'ward'], source[u'matchDate'])
+        userMatch = UserMatch(source[u'champ'], source[u'eloChange'], source[u'mainPerk'], source[u'subPerk'], source[u'kill'], 
+        source[u'death'], source[u'assist'], source[u'cs'], source[u'killP'], source[u'item'], source[u'ward'], source[u'matchDate'], source[u'win'])
 
         return userMatch
 
@@ -83,13 +84,15 @@ class UserMatch(object):
             u'killP' : self.killP,
             u'item' : self.item,
             u'ward' : self.ward,
+            u'matchDate' : self.matchDate,
+            u'win' : self.win,
         }
 
         return match
 
     def __repr__(self):
         return(
-            f'User(\
+            f'UserMatch(\
                 champ={self.champ}, \
                 eloChange={self.eloChange}, \
                 mainPerk={self.mainPerk}, \
@@ -100,7 +103,8 @@ class UserMatch(object):
                 cs={self.cs}, \
                 killP={self.killP}, \
                 item={self.item}, \
-                ward={self.ward}\
+                ward={self.ward},\
+                win={self.win} \
             )'
         )
 

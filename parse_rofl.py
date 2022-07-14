@@ -1,4 +1,3 @@
-import json
 import os
 import datetime
 from riotwatcher import LolWatcher
@@ -32,9 +31,9 @@ def parse_rofl(path):
     match_id = path[:-5].split('-')[1]
     game_dur = dict_obj['json_ob'][0]['TIME_PLAYED']
     win1, win2 = dict_obj['json_ob'][0]['WIN'], dict_obj['json_ob'][5]['WIN']
-    game_creation = int(datetime.datetime.now().timestamp()*1000)
+    game_creation = 1000*(os.path.getmtime(path))#int(datetime.datetime.now().timestamp()*1000)
 
-    new_data = {'MatchId' : match_id, 'gameDuration' : game_dur,'gameCreation':game_creation,
+    new_data = {'gameId' : match_id, 'gameDuration' : game_dur,'gameCreation':game_creation,
             'teams':[{'win':win1},{'win':win2}],'participants':[],
             'participantIdentities': []}
     
