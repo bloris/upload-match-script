@@ -19,14 +19,14 @@ class firebaseDB():
 
     def getAllUser(self):
         allUser = {}
-        docr_ref = self.db.collection(u'users').stream()
+        docr_ref = self.db.collection(self.key["u"]).stream()
         for doc in docr_ref:
             allUser[doc.id] = User.from_dict(doc.to_dict())
         return allUser
     
     def getAllMatch(self):
         allMatch = {}
-        docr_ref = self.db.collection(u'matches').stream()
+        docr_ref = self.db.collection(self.key["m"]).stream()
         for doc in docr_ref:
             allMatch[doc.id] = Match.from_dict(doc.to_dict())
         return allMatch
