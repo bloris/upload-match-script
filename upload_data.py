@@ -141,7 +141,10 @@ class AutoScript:
         for i in range(10):
             puuid = self.userPuuidList[i]
             killTotal = t1Kill if i < 5 else t2Kill
-            win = True if i < 5 and s == 1 else False
+            if i < 5:
+                win = True if s == 1 else False
+            else:
+                win = True if s == 0 else False
             self.userDict[puuid].elo = eloList[i]
             self.userMatch[puuid].eloChange = eloChange[i]
             self.userMatch[puuid].killP = int(100 * (self.userMatch[puuid].kill+self.userMatch[puuid].assist) / killTotal + 0.5)

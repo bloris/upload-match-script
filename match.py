@@ -7,7 +7,7 @@ class Match(object):
     
     @staticmethod
     def from_dict(source):
-        match = Match(source[u'users'],source[u'win'],source[u'matchDate'])
+        match = Match(source[u'users'],source[u'win'],source[u'matchDate'],source[u'gameDuration'])
 
         return match
 

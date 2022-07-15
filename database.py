@@ -1,9 +1,11 @@
+import math
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
 from secret import firebase_key,getDBKey
 from user import User
+from match import Match
 
 class firebaseDB():
     def __init__(self):
@@ -22,6 +24,12 @@ class firebaseDB():
             allUser[doc.id] = User.from_dict(doc.to_dict())
         return allUser
     
+    def getAllMatch(self):
+        allMatch = {}
+        docr_ref = self.db.collection(u'matches').stream()
+        for doc in docr_ref:
+            allMatch[doc.id] = Match.from_dict(doc.to_dict())
+        return allMatch
     
     def isMatchExist(self,matchId):
         doc_ref = self.db.collection(self.key["m"]).document(matchId)
