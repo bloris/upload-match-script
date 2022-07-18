@@ -78,6 +78,7 @@ class AutoScript:
             stat['stats']['totalMinionsKilled']+stat['stats']['neutralMinionsKilled'],
             0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item2'],
             stat['stats']['item4'],stat['stats']['item5'],stat['stats']['item6']],stat['stats']['visionWardsBoughtInGame'],
+            stat['stats']['champLevel'], stat['stats']['goldEarned'],
             datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),False)
 
         return userMatchList

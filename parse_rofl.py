@@ -36,13 +36,15 @@ def parse_rofl(path):
     new_data = {'gameId' : match_id, 'gameDuration' : game_dur,'gameCreation':game_creation,
             'teams':[{'win':win1},{'win':win2}],'participants':[],
             'participantIdentities': []}
-    
+
     for i,v in enumerate(dict_obj['json_ob']):
         tmp_dict = {}
         stats = {}
         stats['kills'] = int(v['CHAMPIONS_KILLED'])
         stats['deaths'] = int(v['NUM_DEATHS'])
         stats['assists'] = int(v['ASSISTS'])
+        stats['champLevel'] = int(v['LEVEL'])
+        stats['goldEarned'] = int(v['GOLD_EARNED'])
         stats['totalMinionsKilled'] = int(v['MINIONS_KILLED'])
         stats['neutralMinionsKilled'] = int(v['NEUTRAL_MINIONS_KILLED'])
         stats['item0'] = v['ITEM0']

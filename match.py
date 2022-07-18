@@ -45,7 +45,7 @@ class Match(object):
             
         return defaultK
 class UserMatch(object):
-    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,matchDate,win) -> None:
+    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,matchDate,champLevel,goldEarned,win) -> None:
         self.champ = champ
         self.eloChange = eloChange
         self.mainPerk = mainPerk
@@ -57,6 +57,8 @@ class UserMatch(object):
         self.killP = killP
         self.item = item
         self.ward = ward
+        self.champLevel = champLevel
+        self.goldEarned = goldEarned
         self.matchDate = matchDate
         self.win = win
     
@@ -67,7 +69,8 @@ class UserMatch(object):
     def from_dict(source):
         # [START_EXCLUDE]
         userMatch = UserMatch(source[u'champ'], source[u'eloChange'], source[u'mainPerk'], source[u'subPerk'], source[u'kill'], 
-        source[u'death'], source[u'assist'], source[u'cs'], source[u'killP'], source[u'item'], source[u'ward'], source[u'matchDate'], source[u'win'])
+        source[u'death'], source[u'assist'], source[u'cs'], source[u'killP'], source[u'item'], source[u'ward'],
+        source[u'champLevel'],source[u'goldEarned'], source[u'matchDate'], source[u'win'])
 
         return userMatch
 
@@ -84,6 +87,8 @@ class UserMatch(object):
             u'killP' : self.killP,
             u'item' : self.item,
             u'ward' : self.ward,
+            u'champLevel' : self.champLevel,
+            u'goldEarned' : self.goldEarned,
             u'matchDate' : self.matchDate,
             u'win' : self.win,
         }
