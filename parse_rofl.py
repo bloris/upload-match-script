@@ -29,7 +29,7 @@ def parse_rofl(path):
     dict_obj = {'json_ob':eval(test)}
 
     match_id = path[:-5].split('-')[1]
-    game_dur = dict_obj['json_ob'][0]['TIME_PLAYED']
+    game_dur = int(dict_obj['json_ob'][0]['TIME_PLAYED'])
     win1, win2 = dict_obj['json_ob'][0]['WIN'], dict_obj['json_ob'][5]['WIN']
     game_creation = 1000*(os.path.getmtime(path))#int(datetime.datetime.now().timestamp()*1000)
 
@@ -47,18 +47,18 @@ def parse_rofl(path):
         stats['goldEarned'] = int(v['GOLD_EARNED'])
         stats['totalMinionsKilled'] = int(v['MINIONS_KILLED'])
         stats['neutralMinionsKilled'] = int(v['NEUTRAL_MINIONS_KILLED'])
-        stats['item0'] = v['ITEM0']
-        stats['item1'] = v['ITEM1']
-        stats['item2'] = v['ITEM2']
-        stats['item3'] = v['ITEM3']
-        stats['item4'] = v['ITEM4']
-        stats['item5'] = v['ITEM5']
-        stats['item6'] = v['ITEM6']
-        stats['visionWardsBoughtInGame'] = v['VISION_WARDS_BOUGHT_IN_GAME']
-        stats['perk0'] = v['PERK0']
-        stats['perkSubStyle'] = v['PERK_SUB_STYLE']
+        stats['item0'] = int(v['ITEM0'])
+        stats['item1'] = int(v['ITEM1'])
+        stats['item2'] = int(v['ITEM2'])
+        stats['item3'] = int(v['ITEM3'])
+        stats['item4'] = int(v['ITEM4'])
+        stats['item5'] = int(v['ITEM5'])
+        stats['item6'] = int(v['ITEM6'])
+        stats['visionWardsBoughtInGame'] = int(v['VISION_WARDS_BOUGHT_IN_GAME'])
+        stats['perk0'] = int(v['PERK0'])
+        stats['perkSubStyle'] = int(v['PERK_SUB_STYLE'])
         tmp_dict['name'] = v['NAME']
-        tmp_dict['championId'] = key_ch[v['SKIN'].lower()]
+        tmp_dict['championId'] = int(key_ch[v['SKIN'].lower()])
         tmp_dict['stats'] = stats
         new_data['participants'].append(tmp_dict)
         new_data['participantIdentities'].append({'player':{'summonerName':v['NAME']}})

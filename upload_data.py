@@ -76,7 +76,7 @@ class AutoScript:
             userMatchList[self.userPuuidList[i]]=UserMatch(stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
             stat['stats']['kills'],stat['stats']['deaths'],stat['stats']['assists'],
             stat['stats']['totalMinionsKilled']+stat['stats']['neutralMinionsKilled'],
-            0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item2'],
+            0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item3'],
             stat['stats']['item4'],stat['stats']['item5'],stat['stats']['item6']],stat['stats']['visionWardsBoughtInGame'],
             stat['stats']['champLevel'], stat['stats']['goldEarned'],
             datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),False)
