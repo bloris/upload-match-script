@@ -45,7 +45,7 @@ class Match(object):
             
         return defaultK
 class UserMatch(object):
-    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,matchDate,champLevel,goldEarned,win) -> None:
+    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,champLevel,goldEarned,win,matchDate) -> None:
         self.champ = champ
         self.eloChange = eloChange
         self.mainPerk = mainPerk

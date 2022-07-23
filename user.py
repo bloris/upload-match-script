@@ -14,6 +14,9 @@ class User(object):
 
         return user
 
+    def update_tier(self):
+        self.tier = self.getTier(self.elo)
+
     def to_dict(self):
         # [START_EXCLUDE]
         user = {

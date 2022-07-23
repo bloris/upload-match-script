@@ -12,8 +12,12 @@ if __name__ == "__main__":
     matchList = sorted(os.listdir(path))
     idx = 0
     for match in tqdm(matchList):
+        if ".json" not in match and '.rofl' not in match:
+            continue
         #print(match)
+        print(match)
         response = autoScript.getData(path=os.path.join(path,match))
+        print(response)
         if response:
             autoScript.updateElo()
             autoScript.putData()

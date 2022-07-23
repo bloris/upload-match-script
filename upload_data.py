@@ -147,6 +147,7 @@ class AutoScript:
             else:
                 win = True if s == 0 else False
             self.userDict[puuid].elo = eloList[i]
+            self.userDict[puuid].update_tier()
             self.userMatch[puuid].eloChange = eloChange[i]
             self.userMatch[puuid].killP = int(100 * (self.userMatch[puuid].kill+self.userMatch[puuid].assist) / killTotal + 0.5)
             self.userMatch[puuid].win = win
