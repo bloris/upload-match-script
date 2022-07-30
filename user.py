@@ -1,5 +1,6 @@
 class User(object):
-    def __init__(self, name, profileIconId, elo, win, lose):
+    def __init__(self, puuid, name, profileIconId, elo, win, lose):
+        self.puuid = puuid
         self.name = name
         self.profileIconId = profileIconId
         self.elo = elo
@@ -10,7 +11,7 @@ class User(object):
     @staticmethod
     def from_dict(source):
         # [START_EXCLUDE]
-        user = User(source[u'name'], source[u'profileIconId'], source[u'elo'], source[u'win'], source[u'lose'])
+        user = User(source[u'puuid'], source[u'name'], source[u'profileIconId'], source[u'elo'], source[u'win'], source[u'lose'])
 
         return user
 
@@ -20,6 +21,7 @@ class User(object):
     def to_dict(self):
         # [START_EXCLUDE]
         user = {
+            u'puuid': self.puuid,
             u'name': self.name,
             u'profileIconId': self.profileIconId,
             u'elo': self.elo,
