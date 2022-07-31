@@ -1,5 +1,6 @@
 class Match(object):
-    def __init__(self,users,win,matchDate,gameDuration):
+    def __init__(self,matchId,users,win,matchDate,gameDuration):
+        self.matchId = matchId
         self.users = users
         self.win = win
         self.matchDate = matchDate
@@ -7,12 +8,13 @@ class Match(object):
     
     @staticmethod
     def from_dict(source):
-        match = Match(source[u'users'],source[u'win'],source[u'matchDate'],source[u'gameDuration'])
+        match = Match(source[u'matchId'],source[u'users'],source[u'win'],source[u'matchDate'],source[u'gameDuration'])
 
         return match
 
     def to_dict(self):
         match = {
+            u'matchId': self.matchId,
             u'users': self.users,
             u'win': self.win,
             u'matchDate': self.matchDate,
@@ -23,6 +25,7 @@ class Match(object):
     def __repr__(self):
         return(
             f'User(\
+                matchId={self.matchId}, \
                 users={self.users}, \
                 win={self.win}, \
                 matchDate={self.matchDate}, \
@@ -45,7 +48,8 @@ class Match(object):
             
         return defaultK
 class UserMatch(object):
-    def __init__(self,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,champLevel,goldEarned,matchDate,win) -> None:
+    def __init__(self,matchId,champ,eloChange,mainPerk,subPerk,kill,death,assist,cs,killP,item,ward,champLevel,goldEarned,matchDate,win) -> None:
+        self.matchId = matchId
         self.champ = champ
         self.eloChange = eloChange
         self.mainPerk = mainPerk
@@ -68,7 +72,7 @@ class UserMatch(object):
     @staticmethod
     def from_dict(source):
         # [START_EXCLUDE]
-        userMatch = UserMatch(source[u'champ'], source[u'eloChange'], source[u'mainPerk'], source[u'subPerk'], source[u'kill'], 
+        userMatch = UserMatch(source[u'matchId'],source[u'champ'], source[u'eloChange'], source[u'mainPerk'], source[u'subPerk'], source[u'kill'], 
         source[u'death'], source[u'assist'], source[u'cs'], source[u'killP'], source[u'item'], source[u'ward'],
         source[u'champLevel'],source[u'goldEarned'], source[u'matchDate'], source[u'win'])
 
@@ -76,6 +80,7 @@ class UserMatch(object):
 
     def to_dict(self):
         match = {
+            u'matchId': self.matchId,
             u'champ': self.champ,
             u'eloChange': self.eloChange,
             u'mainPerk': self.mainPerk,

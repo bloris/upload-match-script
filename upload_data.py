@@ -31,7 +31,7 @@ class AutoScript:
         self.allUser = self.db.getAllUser()
         self.userDict = self.makeUser()
         self.userPuuidList = list(self.userDict.keys())
-        self.match = [self.data['gameId'], Match(self.userPuuidList,self.data['teams'][0]['win'] == 'Win',
+        self.match = [self.data['gameId'], Match(self.data['gameId'],self.userPuuidList,self.data['teams'][0]['win'] == 'Win',
             datetime.datetime.fromtimestamp(self.data['gameCreation']/1000),self.data['gameDuration'])]
         self.userMatch = self.makeMatchList()
 
@@ -71,9 +71,10 @@ class AutoScript:
 
     def makeMatchList(self):
         userMatchList = {}
+        matchId = self.data['gameId']
         for i in range(10):
             stat = self.data['participants'][i]
-            userMatchList[self.userPuuidList[i]]=UserMatch(stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
+            userMatchList[self.userPuuidList[i]]=UserMatch(matchId,stat['championId'],0,stat['stats']['perk0'],stat['stats']['perkSubStyle'],
             stat['stats']['kills'],stat['stats']['deaths'],stat['stats']['assists'],
             stat['stats']['totalMinionsKilled']+stat['stats']['neutralMinionsKilled'],
             0,[stat['stats']['item0'],stat['stats']['item1'],stat['stats']['item2'],stat['stats']['item3'],
