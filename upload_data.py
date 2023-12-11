@@ -65,6 +65,8 @@ class AutoScript:
                 user = self.allUser[puuid]
             else:
                 user = User(puuid,user_data['name'],user_data['profileIconId'],1300,0,0)
+            user.name = user_data['name']
+            user.profileIconId = user_data['profileIconId']
             userDict[puuid] = user
         self.allUser.update(userDict)
         return userDict
